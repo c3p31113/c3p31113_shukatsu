@@ -88,7 +88,7 @@ WHOISメール: abuse@metaregistrar.com / complaint@gname.com
 
 以上が実際に自分に届いたフィッシングメールをもとに考案したプロジェクトです。
 
-# 📊 Googleスプレッドシート WBS管理ツール（ガントチャート・EVM付き）
+# 📊 自作Googleスプレッドシート WBS管理ツール（ガントチャート・EVM付き）
 
 ## 概要
 
