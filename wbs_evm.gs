@@ -196,7 +196,7 @@ function applyWbsDataRowFormatting(sheet, row) {
                     (typeof progressValue === 'number' && progressValue === 100) ||
                     (typeof progressValue === 'string' && parseFloat(progressValue.replace('%', '')) === 100);
 
-  // 行全体の背景色変更は、定義されたデータ列の範囲内(WBS_DATA_COLUMN_COUNT)に限定
+  // 行全体の背景色変更は、定義されたデータ列の範囲内(WBS_DATA_COLUMN_COUNT)に限定
   const targetRowRange = sheet.getRange(row, 1, 1, WBS_DATA_COLUMN_COUNT);
   const idValue = String(sheet.getRange(row, 1).getValue()).trim();
 
@@ -217,19 +217,19 @@ function applyWbsDataRowFormatting(sheet, row) {
   if (PRIORITY_COLORS[priorityValue] !== undefined) {
     priorityCell.setBackground(PRIORITY_COLORS[priorityValue]);
   } else {
-    // 優先度指定がない場合、セルの背景色は行全体の背景色に従う
-    // (ただし、100%完了行なら緑、サンプル行なら薄灰色、それ以外は無色)
-    // is100Percent や idValue の条件は targetRowRange で既に適用済みなので、
-    // targetRowRange.getBackground() を使えば、その行の基本色になる。
-    // ただし、priorityCellがtargetRowRangeの範囲外だとエラーになるため、
-    // targetRowRangeの背景色を直接参照するのではなく、上記の条件分岐を再利用する。
-    if (is100Percent) {
-        priorityCell.setBackground("#d9ead3");
-    } else if (idValue === "0") {
-        priorityCell.setBackground("#f0f0f0");
-    } else {
-        priorityCell.setBackground(null);
-    }
+    // 優先度指定がない場合、セルの背景色は行全体の背景色に従う
+    // (ただし、100%完了行なら緑、サンプル行なら薄灰色、それ以外は無色)
+    // is100Percent や idValue の条件は targetRowRange で既に適用済みなので、
+    // targetRowRange.getBackground() を使えば、その行の基本色になる。
+    // ただし、priorityCellがtargetRowRangeの範囲外だとエラーになるため、
+    // targetRowRangeの背景色を直接参照するのではなく、上記の条件分岐を再利用する。
+    if (is100Percent) {
+        priorityCell.setBackground("#d9ead3");
+    } else if (idValue === "0") {
+        priorityCell.setBackground("#f0f0f0");
+    } else {
+        priorityCell.setBackground(null);
+    }
   }
 }
 
@@ -251,9 +251,9 @@ function onEdit(e) {
   const editedValue = e.value;
   const oldValue = e.oldValue;
 
-  Logger.log(onEdit: シート: ${sheetName}, 行: ${editedRow}, 列: ${editedCol}, 新値: "${editedValue}", 旧値: "${oldValue}");
+  Logger.log(`onEdit: シート: ${sheetName}, 行: ${editedRow}, 列: ${editedCol}, 新値: "${editedValue}", 旧値: "${oldValue}"`);
 
-  if (sheetName !== "WBS_Data") { Logger.log(onEdit: 対象外シート (${sheetName})。スキップ。); return; }
+  if (sheetName !== "WBS_Data") { Logger.log(`onEdit: 対象外シート (${sheetName})。スキップ。`); return; }
 
   // 検索機能の処理 (W2セル: row 2, col 23)
   if (editedRow === 2 && editedCol === 23) { // W列 (23番目の列)
@@ -282,24 +282,24 @@ function onEdit(e) {
                 if (currentId.includes(searchTerm) || currentTaskName.includes(searchTerm)) {
                     const targetRowFound = i + 3;
                     wbsSheet.setActiveSelection(wbsSheet.getRange(targetRowFound, 1));
-                    // SpreadsheetApp.getUi().alert(検索結果: ID「${searchRangeValues[i][0]}」作業名「${searchRangeValues[i][1]}」 (行 ${targetRowFound}) にジャンプしました。);
-                    Logger.log(検索ヒット: 行 ${targetRowFound});
+                    // SpreadsheetApp.getUi().alert(`検索結果: ID「${searchRangeValues[i][0]}」作業名「${searchRangeValues[i][1]}」 (行 ${targetRowFound}) にジャンプしました。`);
+                    Logger.log(`検索ヒット: 行 ${targetRowFound}`);
                     found = true;
                     break;
                 }
             }
             if (!found) {
-                SpreadsheetApp.getUi().alert(「${searchTermRaw}」に一致するタスクは見つかりませんでした。);
-                Logger.log(検索ミスヒット: ${searchTermRaw});
+                SpreadsheetApp.getUi().alert(`「${searchTermRaw}」に一致するタスクは見つかりませんでした。`);
+                Logger.log(`検索ミスヒット: ${searchTermRaw}`);
             }
         }
     }
-    Logger.log(onEdit: 検索機能処理終了。);
+    Logger.log(`onEdit: 検索機能処理終了。`);
     return;
   }
 
 
-  if (editedRow < 3) { Logger.log(onEdit: ヘッダー/ヒント行編集 (${editedRow})。スキップ。); return; }
+  if (editedRow < 3) { Logger.log(`onEdit: ヘッダー/ヒント行編集 (${editedRow})。スキップ。`); return; }
 
   const wbsSheet = sheet;
   const currentEditedId = String(wbsSheet.getRange(editedRow, 1).getValue()).trim();
@@ -307,7 +307,7 @@ function onEdit(e) {
   if (editedCol === 1 && currentEditedId !== "0") { // ID列 (A列) で、ID 0でない場合
     SpreadsheetApp.getUi().alert("ID列は自動割当のため編集禁止です (ID '0' を除く)。元に戻します。");
     e.range.setValue(oldValue !== undefined ? oldValue : null);
-    Logger.log(onEdit: ID列編集禁止。元の値に戻しました。終了。);
+    Logger.log(`onEdit: ID列編集禁止。元の値に戻しました。終了。`);
     return;
   }
 
@@ -329,11 +329,11 @@ function onEdit(e) {
         const allIds = idColumnValues.flat().map(String).filter(v => v !== "" && v !== null && v !== "0" && !isNaN(Number(v))).map(Number); // ID 0 を最大値計算から除外
         if (allIds.length > 0) maxId = Math.max(...allIds);
         idCell.setValue(maxId + 1);
-        Logger.log(onEdit: 必須項目入力完了、ID割り当て: ${maxId + 1});
+        Logger.log(`onEdit: 必須項目入力完了、ID割り当て: ${maxId + 1}`);
     } else if (!allRequiredFilled && (idCell.getValue() !== "" && idCell.getValue() !== null && idCell.getValue() !== undefined)) {
         const oldId = idCell.getValue();
         idCell.clearContent();
-        Logger.log(onEdit: 必須項目未入力、IDクリア: ${oldId});
+        Logger.log(`onEdit: 必須項目未入力、IDクリア: ${oldId}`);
     }
   }
 
@@ -362,43 +362,43 @@ function onEdit(e) {
   if (editedCol === 11) { /* 進捗度 K列 */
     let oldP = String(oldValue || "0").replace('%',''), newP = String(editedValue || "0").replace('%','');
     if (parseFloat(newP) === 100 && parseFloat(oldP) !== 100) {
-        sendMail = true; emailSubject = [WBS通知] タスク「${finalTaskName}」(ID:${finalId})完了;
-        emailBody = タスク「${finalTaskName}」(ID:${finalId})が進捗100%になりました。\n${sheetLink};
+        sendMail = true; emailSubject = `[WBS通知] タスク「${finalTaskName}」(ID:${finalId})完了`;
+        emailBody = `タスク「${finalTaskName}」(ID:${finalId})が進捗100%になりました。\n${sheetLink}`;
     } else if (oldP !== newP) {
-        sendMail = true; emailSubject = [WBS通知] タスク「${finalTaskName}」(ID:${finalId})進捗更新;
-        emailBody = タスク「${finalTaskName}」(ID:${finalId})進捗更新: ${oldP}%→${newP}%\n${sheetLink};
+        sendMail = true; emailSubject = `[WBS通知] タスク「${finalTaskName}」(ID:${finalId})進捗更新`;
+        emailBody = `タスク「${finalTaskName}」(ID:${finalId})進捗更新: ${oldP}%→${newP}%\n${sheetLink}`;
     }
     if(sendMail) notifyEmails = getNotificationEmails(finalAssigneesString, TARGET_ASSIGNEES_MAP);
   } else if (editedCol === 10) { /* 担当者 J列 */
     if (String(oldValue || "") !== String(editedValue || "")) {
-      sendMail = true; emailSubject = [WBS通知] タスク「${finalTaskName}」(ID:${finalId})担当者変更;
-      emailBody = タスク「${finalTaskName}」(ID:${finalId})担当者変更: ${oldValue||"なし"}→${editedValue||"なし"}\n${sheetLink};
-      notifyEmails = getNotificationEmails(${oldValue||""},${editedValue||""}, TARGET_ASSIGNEES_MAP);
+      sendMail = true; emailSubject = `[WBS通知] タスク「${finalTaskName}」(ID:${finalId})担当者変更`;
+      emailBody = `タスク「${finalTaskName}」(ID:${finalId})担当者変更: ${oldValue||"なし"}→${editedValue||"なし"}\n${sheetLink}`;
+      notifyEmails = getNotificationEmails(`${oldValue||""},${editedValue||""}`, TARGET_ASSIGNEES_MAP);
     }
   } else if (editedCol === 9) { /* 実績作業時間 I列 */
     if (String(oldValue || "") !== String(editedValue || "")) {
-      sendMail = true; emailSubject = [WBS通知] タスク「${finalTaskName}」(ID:${finalId}) ${headerName} 更新;
-      emailBody = タスク「${finalTaskName}」(ID:${finalId}) ${headerName} 更新: "${oldValue||"未"}"→"${editedValue||"未"}"\n${sheetLink};
+      sendMail = true; emailSubject = `[WBS通知] タスク「${finalTaskName}」(ID:${finalId}) ${headerName} 更新`;
+      emailBody = `タスク「${finalTaskName}」(ID:${finalId}) ${headerName} 更新: "${oldValue||"未"}"→"${editedValue||"未"}"\n${sheetLink}`;
       notifyEmails = getNotificationEmails(finalAssigneesString, TARGET_ASSIGNEES_MAP);
     }
   } else if ([2,3,4,5,6,7,8,12,13,14,15,16,17,18,19].includes(editedCol)) { // 20を削除し、19（コメント列）までを対象
     if (String(oldValue || "") !== String(editedValue || "")) {
-      sendMail = true; emailSubject = [WBS通知] タスク「${finalTaskName}」(ID:${finalId}) ${headerName} 更新;
+      sendMail = true; emailSubject = `[WBS通知] タスク「${finalTaskName}」(ID:${finalId}) ${headerName} 更新`;
       let oldD = oldValue, newD = editedValue;
       if (editedCol === 6 || editedCol === 7) { // 日付列
         const tz = ss.getSpreadsheetTimeZone();
         if (oldValue instanceof Date) oldD = Utilities.formatDate(oldValue, tz, "yyyy/MM/dd");
         if (editedValue instanceof Date) newD = Utilities.formatDate(editedValue, tz, "yyyy/MM/dd");
       }
-      emailBody = タスク「${finalTaskName}」(ID:${finalId}) ${headerName} 更新: "${oldD||"未"}"→"${newD||"未"}"\n${sheetLink};
+      emailBody = `タスク「${finalTaskName}」(ID:${finalId}) ${headerName} 更新: "${oldD||"未"}"→"${newD||"未"}"\n${sheetLink}`;
       notifyEmails = getNotificationEmails(finalAssigneesString, TARGET_ASSIGNEES_MAP);
     }
   }
 
   if (sendMail && emailSubject && notifyEmails.length > 0 && finalId) {
-    Logger.log(onEdit: メール送信実行。宛先: ${notifyEmails.join(", ")}, 件名: "${emailSubject}");
-    notifyEmails.forEach(email => { try { MailApp.sendEmail(email, emailSubject, emailBody); Logger.log(Mail送成功:${email});} catch (f) { Logger.log(Mail送失敗:${email}. Error:${f.message});}});
-  } else { Logger.log(onEdit: Mail送信条件未達。sendMail:${sendMail}, subject:"${emailSubject}", recipients:${notifyEmails.length}, ID:${finalId});}
+    Logger.log(`onEdit: メール送信実行。宛先: ${notifyEmails.join(", ")}, 件名: "${emailSubject}"`);
+    notifyEmails.forEach(email => { try { MailApp.sendEmail(email, emailSubject, emailBody); Logger.log(`Mail送成功:${email}`);} catch (f) { Logger.log(`Mail送失敗:${email}. Error:${f.message}`);}});
+  } else { Logger.log(`onEdit: Mail送信条件未達。sendMail:${sendMail}, subject:"${emailSubject}", recipients:${notifyEmails.length}, ID:${finalId}`);}
 
   Utilities.sleep(500);
   updateGanttChart();
@@ -505,84 +505,166 @@ function updateEvmDisplay() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const wbsSheet = ss.getSheetByName("WBS_Data");
   let evmSheet = ss.getSheetByName("EVM_Display");
-  if (!wbsSheet) { Logger.log("EVM: WBS_Dataなし。"); if(evmSheet){evmSheet.clear(); evmSheet.getRange(1,1).setValue("WBS_Dataなし。");} return; }
-  if (!evmSheet) evmSheet = ss.insertSheet("EVM_Display");
-  evmSheet.clear(); evmSheet.getCharts().forEach(chart => evmSheet.removeChart(chart));
 
-  const firstDataRowWBS = 3, wbsLastRow = wbsSheet.getLastRow();
-  if (wbsLastRow < firstDataRowWBS) { evmSheet.getRange(1,1).setValue("WBS_Dataにデータなし。"); return; }
+  if (!wbsSheet) { 
+    if(evmSheet){ evmSheet.clear(); evmSheet.getRange(1,1).setValue("WBS_Dataシートが見つかりません。");} 
+    Logger.log("EVM: WBS_Dataなし。"); 
+    return; 
+  }
+  
+  evmSheet.clear(); 
+  evmSheet.getCharts().forEach(chart => evmSheet.removeChart(chart));
 
-  const wbsValues = wbsSheet.getRange(firstDataRowWBS, 1, wbsLastRow - firstDataRowWBS + 1, 11).getValues() // WBS_DATA_COLUMN_COUNT ではなく、EVM計算に必要な列数(11列目 進捗度まで)
-    .filter(row => String(row[0]).trim() && String(row[0]).trim() !== "0"); // IDあり かつ ID 0 でない
+  // --- 1. タスク毎のEVMテーブルを作成 ---
+  const firstDataRowWBS = 3;
+  const wbsLastRow = wbsSheet.getLastRow();
+  if (wbsLastRow < firstDataRowWBS) { 
+    evmSheet.getRange(1,1).setValue("WBS_Dataにデータがありません。"); 
+    return; 
+  }
+  const wbsValues = wbsSheet.getRange(firstDataRowWBS, 1, wbsLastRow - firstDataRowWBS + 1, 11).getValues()
+    .filter(row => String(row[0]).trim() && String(row[0]).trim() !== "0");
 
-  if (wbsValues.length === 0) { evmSheet.getRange(1,1).setValue("有効なEVM計算対象データなし (ID 0除く)。"); return; }
-
+  if (wbsValues.length === 0) {
+    evmSheet.getRange(1,1).setValue("有効なEVM計算対象データがありません (ID '0'を除く)。");
+    return;
+  }
   const evmHeaders = ["ID","作業名","PV(予定時間)","EV(出来高時間)","AC(実績時間)","SPI(進捗効率)","CPI(コスト効率)"];
-  evmSheet.getRange(1,1,1,evmHeaders.length).setValues([evmHeaders]).setFontWeight("bold").setBackground("#c8e6c9").setHorizontalAlignment("center").setWrap(true).setVerticalAlignment("middle");
-  evmSheet.setFrozenRows(1);
+  evmSheet.getRange(1, 1, 1, evmHeaders.length).setValues([evmHeaders])
+    .setFontWeight("bold").setBackground("#c8e6c9").setHorizontalAlignment("center").setWrap(true).setVerticalAlignment("middle");
 
   let totalPv = 0, totalEv = 0, totalAc = 0;
   const evmDataRows = wbsValues.map(row => {
     const id = row[0], taskName = row[1];
-    const plannedHours = parseFloat(row[7]) || 0; // H列 (インデックス7)
-    const actualHours = parseFloat(row[8]) || 0;  // I列 (インデックス8)
-    let progress = row[10]; // K列 (インデックス10)
+    const plannedHours = parseFloat(row[7]) || 0;
+    const actualHours = parseFloat(row[8]) || 0;
+    let progress = row[10];
     if (typeof progress === 'string') progress = parseFloat(progress.replace('%','')) || 0;
     else if (typeof progress !== 'number' || isNaN(progress)) progress = 0;
-
-    const pv = plannedHours, ev = plannedHours * (progress/100), ac = actualHours;
+    const pv = plannedHours, ev = plannedHours * (progress / 100), ac = actualHours;
     totalPv += pv; totalEv += ev; totalAc += ac;
-    const spi = pv > 0 ? (ev/pv) : (ev === 0 && pv === 0 ? 1 : "-");
-    const cpi = ac > 0 ? (ev/ac) : (ev === 0 && ac === 0 ? 1 : "-");
+    const spi = pv > 0 ? (ev / pv) : (ev === 0 && pv === 0 ? 1 : "-");
+    const cpi = ac > 0 ? (ev / ac) : (ev === 0 && ac === 0 ? 1 : "-");
     return [id, taskName, pv, ev, ac, spi, cpi];
   });
 
-  let summaryRowIndex = 1;
-  if (evmDataRows.length > 0) {
-    const dataRange = evmSheet.getRange(2, 1, evmDataRows.length, evmHeaders.length);
-    dataRange.setValues(evmDataRows).setVerticalAlignment("top");
+  evmSheet.getRange(2, 1, evmDataRows.length, evmHeaders.length).setValues(evmDataRows).setVerticalAlignment("top").setNumberFormat("@");
+  evmSheet.getRange(2, 3, evmDataRows.length, 3).setNumberFormat("0.0");
+  evmSheet.getRange(2, 6, evmDataRows.length, 2).setNumberFormat("0.00");
+  
+  const summaryRowIndex = evmDataRows.length + 2;
+  const totalSpi = totalPv > 0 ? (totalEv / totalPv) : (totalEv === 0 && totalPv === 0 ? 1 : "-");
+  const totalCpi = totalAc > 0 ? (totalEv / totalAc) : (totalEv === 0 && totalAc === 0 ? 1 : "-");
+  const summaryRange = evmSheet.getRange(summaryRowIndex, 1, 1, evmHeaders.length);
+  summaryRange.setValues([["プロジェクト合計", "", totalPv, totalEv, totalAc, totalSpi, totalCpi]])
+    .setFontWeight("bold").setBackground("#f3f3f3").setBorder(true,true,true,true,true,true);
+  evmSheet.getRange(summaryRowIndex, 3, 1, 3).setNumberFormat("0.0");
+  evmSheet.getRange(summaryRowIndex, 6, 1, 2).setNumberFormat("0.00");
+  evmSheet.setColumnWidths(1, 7, 120).setColumnWidth(1, 60).setColumnWidth(2, 250);
+  evmSheet.getRange(1, 1, summaryRowIndex, evmHeaders.length).setBorder(true, true, true, true, true, true, "#d9d9d9", SpreadsheetApp.BorderStyle.SOLID);
+  evmSheet.setFrozenRows(1);
 
-    // 列ごとにフォーマットを設定
-    evmSheet.getRange(2, 1, evmDataRows.length, 2).setNumberFormat("@"); // ID, TaskName (A, B列)
-    evmSheet.getRange(2, 3, evmDataRows.length, 3).setNumberFormat("0.0"); // PV, EV, AC (C, D, E列)
-    evmSheet.getRange(2, 6, evmDataRows.length, 2).setNumberFormat("0.00"); // SPI, CPI (F, G列)
+  // --- 2. 時間軸ベースの累積EVMグラフ（Sカーブ）を作成 ---
+  const tasks = wbsValues.map(row => {
+    const startDate = row[5]; // F列
+    const endDate = row[6];   // G列
+    if (!(startDate instanceof Date) || !(endDate instanceof Date) || endDate < startDate) return null;
+    const pv = parseFloat(row[7]) || 0;
+    const progress = (parseFloat(String(row[10]).replace('%', '')) || 0) / 100;
+    return {
+      startDate: new Date(startDate.setHours(0,0,0,0)),
+      endDate: new Date(endDate.setHours(0,0,0,0)),
+      pv: pv,
+      ev: pv * progress,
+      ac: parseFloat(row[8]) || 0,
+    };
+  }).filter(Boolean);
 
-    summaryRowIndex = evmDataRows.length + 2;
-    const totalSpi = totalPv > 0 ? (totalEv/totalPv):(totalEv===0 && totalPv===0 ? 1:"-");
-    const totalCpi = totalAc > 0 ? (totalEv/totalAc):(totalEv===0 && totalAc===0 ? 1:"-");
-    
-    const summaryRange = evmSheet.getRange(summaryRowIndex,1,1,evmHeaders.length);
-    summaryRange.setValues([["合計","",totalPv,totalEv,totalAc,totalSpi,totalCpi]])
-      .setFontWeight("bold").setVerticalAlignment("top");
+  if (tasks.length === 0) {
+    Logger.log("グラフ描画対象の有効な日付を持つタスクがありません。");
+    return;
+  }
+
+  const allDates = tasks.flatMap(t => [t.startDate, t.endDate]);
+  const projectStartDate = new Date(Math.min.apply(null, allDates));
+  const projectEndDate = new Date(Math.max.apply(null, allDates));
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  
+  const dailyDeltas = new Map();
+  const msPerDay = 86400000;
+
+  tasks.forEach(task => {
+    const duration = (task.endDate.getTime() - task.startDate.getTime()) / msPerDay + 1;
+    if (duration <= 0) return;
+
+    const dailyPv = task.pv / duration;
+    const dailyEv = task.ev / duration;
+    const dailyAc = task.ac / duration;
+
+    for (let d = new Date(task.startDate); d <= task.endDate; d.setDate(d.getDate() + 1)) {
+      const dateKey = d.toISOString().slice(0, 10);
+      const currentDeltas = dailyDeltas.get(dateKey) || { pv: 0, ev: 0, ac: 0 };
+      currentDeltas.pv += dailyPv;
+      currentDeltas.ev += dailyEv;
+      currentDeltas.ac += dailyAc;
+      dailyDeltas.set(dateKey, currentDeltas);
+    }
+  });
+
+  const chartData = [];
+  let cumulativePv = 0, cumulativeEv = 0, cumulativeAc = 0;
+
+  for (let d = new Date(projectStartDate); d <= projectEndDate; d.setDate(d.getDate() + 1)) {
+    const dateKey = d.toISOString().slice(0, 10);
+    const deltas = dailyDeltas.get(dateKey) || { pv: 0, ev: 0, ac: 0 };
     
-    evmSheet.getRange(summaryRowIndex, 1, 1, 2).setNumberFormat("@");
-    evmSheet.getRange(summaryRowIndex, 3, 1, 3).setNumberFormat("0.0");
-    evmSheet.getRange(summaryRowIndex, 6, 1, 2).setNumberFormat("0.00");
+    cumulativePv += deltas.pv;
+    
+    let evForChart = null, acForChart = null;
+    if (d <= today) {
+      cumulativeEv += deltas.ev;
+      cumulativeAc += deltas.ac;
+      evForChart = cumulativeEv;
+      acForChart = cumulativeAc;
+    }
+    chartData.push([new Date(d), cumulativePv, evForChart, acForChart]);
+  }
+  
+  if (chartData.length > 0) {
+    const chartDataWithHeader = [["日付", "累積PV", "累積EV", "累積AC"], ...chartData];
+    const chartDataStartColumn = evmHeaders.length + 2;
+    const chartDataSourceRange = evmSheet.getRange(1, chartDataStartColumn, chartDataWithHeader.length, chartDataWithHeader[0].length);
+    chartDataSourceRange.setValues(chartDataWithHeader);
 
-    evmSheet.setColumnWidth(1,80); evmSheet.setColumnWidth(2,300);
-    for(let i=3; i<=7; i++) evmSheet.setColumnWidth(i,120);
-    evmSheet.getRange(1,1,summaryRowIndex,evmHeaders.length).setBorder(true,true,true,true,true,true,"#d9d9d9",SpreadsheetApp.BorderStyle.SOLID);
+    const sCurveChart = evmSheet.newChart()
+        .setChartType(Charts.ChartType.LINE)
+        .addRange(chartDataSourceRange)
+        .setMergeStrategy(Charts.ChartMergeStrategy.MERGE_COLUMNS)
+        .setTransposeRowsAndColumns(false)
+        .setNumHeaders(1)
+        .setOption('useFirstColumnAsDomain', true)
+        .setOption('title', 'EVM累積グラフ（Sカーブ）')
+        .setOption('titleTextStyle', { color: '#333', fontSize: 16 })
+        .setOption('legend', { position: 'top', alignment: 'center' })
+        .setOption('hAxis', { title: '日付', titleTextStyle: { color: '#555' }, gridlines: { count: -1 } })
+        .setOption('vAxis', { title: '累積時間 (Hours)', titleTextStyle: { color: '#555' }, viewWindow: { min: 0 } })
+        .setOption('series', {
+            0: { color: '#4285F4', lineWidth: 2 },
+            1: { color: '#0F9D58', lineWidth: 2 },
+            2: { color: '#DB4437', lineWidth: 2 }
+        })
+        .setPosition(2, evmHeaders.length + 2, 0, 0)
+        .build();
+    evmSheet.insertChart(sCurveChart);
 
-    if (evmDataRows.length > 0) {
-      const chartDataRange = evmSheet.getRange(1,1,evmDataRows.length+1,5);
-      evmSheet.insertChart(evmSheet.newChart().setChartType(Charts.ChartType.LINE)
-        .addRange(chartDataRange.offset(0,0,evmDataRows.length+1,1)) 
-        .addRange(chartDataRange.offset(0,2,evmDataRows.length+1,1)) 
-        .addRange(chartDataRange.offset(0,3,evmDataRows.length+1,1)) 
-        .addRange(chartDataRange.offset(0,4,evmDataRows.length+1,1)) 
-        .setMergeStrategy(Charts.ChartMergeStrategy.MERGE_COLUMNS)
-        .setTransposeRowsAndColumns(false).setNumHeaders(1)
-        .setOption('useFirstColumnAsDomain',true).setOption('title','EVM推移 (タスク別)')
-        .setOption('titleTextStyle',{color:'#333',fontSize:16}).setOption('legend',{position:'top',alignment:'center'})
-        .setOption('hAxis',{title:'タスクID',titleTextStyle:{color:'#555'}})
-        .setOption('vAxis',{title:'時間(Hours)',titleTextStyle:{color:'#555'},viewWindow:{min:0}})
-        .setOption('series',{0:{color:'#4285F4',lineWidth:2,labelInLegend:evmHeaders[2]},1:{color:'#0F9D58',lineWidth:2,labelInLegend:evmHeaders[3]},2:{color:'#DB4437',lineWidth:2,labelInLegend:evmHeaders[4]}})
-        .setPosition(summaryRowIndex+2,1,5,5).build());
-      Logger.log("EVM折れ線グラフ作成。");
-    }
-  } else { evmSheet.getRange(2,1).setValue("表示するEVMデータなし。"); }
+    // グラフのデータソース列を非表示にする
+    evmSheet.hideColumns(chartDataStartColumn, chartDataWithHeader[0].length);
+  }
+
   Logger.log("EVM表示更新完了");
 }
+
 
 function onOpen() {
   SpreadsheetApp.getUi().createMenu("WBS管理")
