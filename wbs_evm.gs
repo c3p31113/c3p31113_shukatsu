@@ -1,11 +1,11 @@
 // スクリプトプロパティや固定のメールアドレスの代わりに、ここに担当者とメールアドレスのマッピングを定義します。
 const TARGET_ASSIGNEES_MAP = {
-  "横井善敬": "c3p31113@bunkyo.ac.jp",
-  "中島龍之介": "c3p31080@bunkyo.ac.jp",
-  "岩田柊": "c3p31009@bunkyo.ac.jp",
-  "崎枝祐治": "c3p31044@bunkyo.ac.jp",
-  "日之西海聖": "c3p31096@bunkyo.ac.jp",
-  "福崎晴太": "c3p31097@bunkyo.ac.jp"
+  "メンバー１": "example1@com",
+  "メンバー２": "example2@com",
+  "メンバー３": "example3@com",
+  "メンバー４": "example4@com",
+  "メンバー５": "example5@com",
+  "メンバー６": "example6@com"
   // 必要に応じて他の担当者も追加
 };
 
@@ -674,3 +674,4 @@ function onOpen() {
     .addItem("EVM表示手動更新", "updateEvmDisplay")
     .addToUi();
 }
+
