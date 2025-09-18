@@ -1,0 +1,79 @@
+# ---------------------------------
+# Python & Virtual Environments
+# ---------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+*.manifest
+*.spec
+
+# Virtual environment folders
+venv/
+env/
+.venv/
+
+# ---------------------------------
+# CYBER-AEGIS Application Specific
+# ---------------------------------
+# Database files (VERY IMPORTANT)
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Log files
+*.log
+
+# Cache directory and contents
+cache/
+
+# Sensitive configuration files and cookies
+config.ini
+.google-cookie
+
+# Generated modules by White Team AI
+src/analyzers/generated/
+
+# ---------------------------------
+# IDE & Editor Configurations
+# ---------------------------------
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# ---------------------------------
+# OS Generated Files
+# ---------------------------------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# ---------------------------------
+# Executables
+# ---------------------------------
+*.exe
+*.dll

