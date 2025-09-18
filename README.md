@@ -331,7 +331,7 @@ CYBER-AEGISは、以下の多岐にわたる専門的な機能を、一つの統
 
 ### 6. 主な使用技術 (Tech Stack)
 
-* **Backend:** Python 3.11+
+* **Backend:** Python 3.13+
 * **AI:** Ollama (Local LLM)
 * **GUI:** PyQt6
 * **Database:** SQLAlchemy, SQLite
