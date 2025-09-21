@@ -4,16 +4,40 @@ import datetime
 from PyQt6.QtWidgets import (QWidget, QHBoxLayout, QVBoxLayout, QTableView,
                              QAbstractItemView, QLabel, QTextEdit, QPushButton,
                              QHeaderView, QMessageBox)
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QThread, QObject, pyqtSignal
 from PyQt6.QtGui import QStandardItemModel, QStandardItem, QColor
 
 from src.data_integrators.file_monitor import MonitorThread
 from src.defense_matrix.real_defense import RealDefense
 from src.database.db_manager import DBManager
-from dashboard.ui.views.dashboard_view import AIWorker, HistoryLoaderWorker
+from dashboard.ui.views.dashboard_view import HistoryLoaderWorker
 from src.utils.notifier import notifier
 from src.utils.config_manager import ConfigManager
 from src.threat_intel.threat_scoring_engine import ThreatScoringEngine
+from src.core_ai.ollama_manager import OllamaManager
+
+class AnalysisWorker(QObject):
+    """AI分析をバックグラウンドで実行するためのワーカクラス。"""
+    result = pyqtSignal(tuple)
+    finished = pyqtSignal()
+
+    def __init__(self, prompt, system_message, context_data, model_name):
+        super().__init__()
+        self.prompt = prompt
+        self.system_message = system_message
+        self.context_data = context_data
+        self.model_name = model_name
+
+    def run(self):
+        try:
+            ai_manager = OllamaManager(model=self.model_name)
+            report = ai_manager.generate_response(self.prompt, self.system_message)
+            self.result.emit((report, self.context_data))
+        except Exception as e:
+            print(f"AnalysisWorker Error: {e}")
+            self.result.emit(("", self.context_data))
+        finally:
+            self.finished.emit()
 
 class FileMonitorView(QWidget):
     def __init__(self, parent=None):
@@ -24,6 +48,7 @@ class FileMonitorView(QWidget):
         self.config_manager = ConfigManager()
         self.scoring_engine = ThreatScoringEngine()
         self.ai_thread = None
+        self.ai_worker = None
         self.monitor_thread = None
         self.history_thread = None
         self.current_request_id = None
@@ -54,6 +79,7 @@ class FileMonitorView(QWidget):
         self.event_table.clicked.connect(self.on_event_selected)
         
         self.model = QStandardItemModel()
+        # テーブルのヘッダー名を定義
         self.model.setHorizontalHeaderLabels(["ID", "イベントタイプ", "ファイルパス", "検知時刻", "脅威レベル"])
         self.event_table.setModel(self.model)
         
@@ -102,6 +128,7 @@ class FileMonitorView(QWidget):
         self.event_id_counter = self.get_latest_event_id()
 
     def start_monitoring(self):
+        # (この関数に変更はありません)
         if self.monitor_thread and self.monitor_thread.isRunning():
             return
         paths_to_watch = []
@@ -140,6 +167,7 @@ class FileMonitorView(QWidget):
         self.monitor_thread.start()
 
     def on_file_event(self, event_data):
+        # (この関数に変更はありません)
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         yara_matches = event_data.get('yara_matches', [])
         current_id = self.event_id_counter
@@ -175,14 +203,15 @@ class FileMonitorView(QWidget):
         self.event_id_counter += 1
 
     def add_event_to_ui_table(self, event_data):
+        # (この関数に変更はありません)
         path_item = QStandardItem(event_data.get("path", event_data.get("file_path", "")))
         path_item.setToolTip(event_data.get("path", event_data.get("file_path", "")))
         threat_colors = {"LOW": QColor("#2ecc71"), "MEDIUM": QColor("#f1c40f"), "HIGH": QColor("#e67e22"), "CRITICAL": QColor("#e74c3c")}
         row_items = [
-            QStandardItem(str(event_data.get("id", event_data.get("event_id")))),
+            QStandardItem(str(event_data.get("id", ""))),
             QStandardItem(event_data.get("event_type")),
             path_item,
-            QStandardItem(event_data.get("time", event_data.get("event_time"))),
+            QStandardItem(event_data.get("time", "")),
             QStandardItem(event_data.get("threat_level"))
         ]
         threat_item = row_items[4]
@@ -191,9 +220,17 @@ class FileMonitorView(QWidget):
         self.model.insertRow(0, row_items)
 
     def on_event_selected(self, index):
-        if self.ai_thread and self.ai_thread.isRunning(): return
+        if self.ai_thread and self.ai_thread.isRunning():
+            QMessageBox.information(self, "情報", "現在、別のAI分析が進行中です。完了までお待ちください。")
+            return
+            
+        # ヘッダー名 "ID" をキーとして辞書を作成
         row_data = {self.model.headerData(col, Qt.Orientation.Horizontal): self.model.item(index.row(), col).text() for col in range(self.model.columnCount())}
-        self.current_request_id = row_data['イベントID']
+        
+        # --- ▼▼▼【修正点 ①】▼▼▼ ---
+        # ここでクラッシュしていました。'イベントID' ではなく、ヘッダーで定義した 'ID' を使います。
+        self.current_request_id = row_data['ID']
+        # --- ▲▲▲ 修正ここまで ▲▲▲ ---
         self.current_selected_context = row_data
         
         full_event_data = self.db_manager.get_event_by_id(self.current_request_id)
@@ -215,14 +252,14 @@ class FileMonitorView(QWidget):
 
         system_message = "あなたはサイバーセキュリティ専門のアナリストです。あなたの役割は、提示されたインシデントデータを基に、専門的かつ具体的で、示唆に富むHTML形式の分析レポートを作成することです。一般的で使い回しのできる助言や情報の繰り返しは絶対に避けてください。"
         
+        # --- ▼▼▼【修正点 ②】▼▼▼ ---
+        # AIに渡すプロンプト内のキーも 'ID' に統一します。
         prompt = f"""<ROLE>
 あなたは、提供されたセキュリティイベントのデータと、私が与える厳格な指示とフォーマットに基づいて、HTML形式の分析レポートを生成する専門家です。
 </ROLE>
-
 <TASK>
 以下の<TASK_INPUT>と<YARA_ANALYSIS>（もしあれば）の情報を分析し、脅威の詳細な分析レポートをHTML形式で生成してください。
 </TASK>
-
 <RULES>
 1.  **思考プロセス:**
     -   まず、`<TASK_INPUT>`の`脅威レベル`を確認する。
@@ -237,9 +274,8 @@ class FileMonitorView(QWidget):
     -   `{{ variable }}`のようなテンプレート構文や、英語、中国語など、日本語以外の言語を絶対に使用してはならない。
     -   <TASK_INPUT>の情報をただ繰り返すだけの、価値のない文章を生成してはならない。
 </RULES>
-
 <EXAMPLE>
-TASK_INPUT: {{'イベントID': 'FILE-9999', 'イベントタイプ': 'YARA検知 (作成)', 'ファイルパス': 'C:\\...\\test_virus.txt', '脅威レベル': 'CRITICAL'}}
+TASK_INPUT: {{'ID': 'FILE-9999', 'イベントタイプ': 'YARA検知 (作成)', 'ファイルパス': 'C:\\...\\test_virus.txt', '脅威レベル': 'CRITICAL'}}
 YARA_ANALYSIS: YARAは...(**ここにYARA情報が入る**)
 OUTPUT:
 <div>
@@ -254,9 +290,8 @@ OUTPUT:
 </ul>
 </div>
 </EXAMPLE>
-
 <EXAMPLE>
-TASK_INPUT: {{'イベントID': 'FILE-0010', 'イベントタイプ': '作成', 'ファイルパス': 'C:\\Users\\...\\Documents\\o.txt', '脅威レベル': 'LOW'}}
+TASK_INPUT: {{'ID': 'FILE-0010', 'イベントタイプ': '作成', 'ファイルパス': 'C:\\Users\\...\\Documents\\o.txt', '脅威レベル': 'LOW'}}
 OUTPUT:
 <div>
 <h3>イベント概要</h3>
@@ -270,16 +305,27 @@ OUTPUT:
 </ul>
 </div>
 </EXAMPLE>
-
 <TASK_INPUT>
 {row_data}
 </TASK_INPUT>
 {yara_details_prompt}
 """
+        # --- ▲▲▲ 修正ここまで ▲▲▲ ---
         
         self.report_space.setText(f"AIがイベントID: {self.current_request_id} の分析を開始しました...")
-        self.ai_thread = AIWorker(prompt, system_message, row_data, self.model_name)
-        self.ai_thread.result.connect(self.display_ai_report_as_html)
+        
+        self.ai_thread = QThread()
+        self.ai_worker = AnalysisWorker(prompt, system_message, row_data, self.model_name)
+        self.ai_worker.moveToThread(self.ai_thread)
+        
+        self.ai_thread.started.connect(self.ai_worker.run)
+        self.ai_worker.finished.connect(self.ai_thread.quit)
+        self.ai_worker.finished.connect(self.ai_worker.deleteLater)
+        self.ai_thread.finished.connect(self.ai_thread.deleteLater)
+        self.ai_thread.finished.connect(lambda: setattr(self, 'ai_thread', None))
+        self.ai_thread.finished.connect(lambda: setattr(self, 'ai_worker', None))
+
+        self.ai_worker.result.connect(self.display_ai_report_as_html)
         self.ai_thread.start()
 
     def on_quarantine_button_clicked(self):
@@ -294,7 +340,12 @@ OUTPUT:
     
     def display_ai_report_as_html(self,result_tuple):
         ai_html_report,context_data=result_tuple
-        if context_data['イベントID']!=self.current_request_id:return
+        
+        # --- ▼▼▼【修正点 ③】▼▼▼ ---
+        # 返ってきたデータを確認する際も 'ID' を使います。
+        if context_data.get('ID') != self.current_request_id: return
+        # --- ▲▲▲ 修正ここまで ▲▲▲ ---
+
         self.pdf_button.setEnabled(True)
         self.quarantine_button.setEnabled(True)
         clean_report=ai_html_report.strip()
@@ -304,6 +355,9 @@ OUTPUT:
         threat_level=context_data['脅威レベル']
         threat_color_map={"LOW":"#2ecc71","MEDIUM":"#f1c40f","HIGH":"#e67e22","CRITICAL":"#e74c3c"}
         threat_color=threat_color_map.get(threat_level,"gray")
+
+        # --- ▼▼▼【修正点 ④】▼▼▼ ---
+        # レポートに表示するHTMLの中でも 'ID' を使います。
         full_html=f"""<html><head><style>
         body{{font-family:'Segoe UI','Meiryo UI',sans-serif;color:#f0f0f0;line-height:1.6;}}
         h2{{color:#575fcf;border-bottom:2px solid #575fcf;padding-bottom:5px;}}
@@ -313,16 +367,22 @@ OUTPUT:
         .threat-level{{font-weight:bold;color:{threat_color};}}
         </style></head><body>
         <h2>イベント分析レポート</h2>
-        <p><strong>ID:</strong> {context_data['イベントID']}<br>
+        <p><strong>ID:</strong> {context_data['ID']}<br>
         <strong>イベント:</strong> {context_data['イベントタイプ']}<br>
         <strong>パス:</strong> {context_data['ファイルパス']}<br>
         <strong>脅威レベル:</strong> <span class="threat-level">{threat_level}</span></p><hr>
         {clean_report if clean_report else"<p>AIからの応答がありませんでした。</p>"}
         </body></html>"""
+        # --- ▲▲▲ 修正ここまで ▲▲▲ ---
         self.report_space.setHtml(full_html)
 
     def closeEvent(self, event):
+        if self.ai_thread and self.ai_thread.isRunning():
+            self.ai_thread.quit()
+            self.ai_thread.wait(2000)
+
         if self.monitor_thread and self.monitor_thread.isRunning():
             self.monitor_thread.stop()
             self.monitor_thread.wait()
+        
         super().closeEvent(event)
