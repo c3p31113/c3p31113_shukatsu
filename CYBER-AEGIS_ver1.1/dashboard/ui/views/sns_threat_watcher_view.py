@@ -28,7 +28,7 @@ class AiAnalysisWorker(QThread):
     def __init__(self, leak_item, model_name):
         super().__init__()
         self.leak_item = leak_item
-        self.ai_manager = OllamaManager(model=model_name, timeout=300)
+        self.ai_manager = OllamaManager(model=model_name, timeout=3000)
         # GitHubのファイル内容取得でのみ必要
         if self.leak_item.get('id', '').startswith('gh-'):
             self.github_collector = GithubCollector()
@@ -60,10 +60,10 @@ class AiAnalysisWorker(QThread):
 
     def _perform_programmatic_analysis(self, context, keyword, source_type):
         risk, confidence, reason = "MEDIUM", 0.5, "公開情報で秘密情報らしきキーワードが検出されました。"
-        if source_type.startswith("GitHub") and keyword.upper() == "AKIA" and re.search(r'AKIA[0-9A-Z]{16}', context):
-             risk, confidence, reason = "CRITICAL", 0.9, "AWSのアクセスキーIDのフォーマットに完全に一致しています。"
+        if source_type.startswith("GitHub") and "AKIA" in keyword.upper() and re.search(r'AKIA[0-9A-Z]{16}', context):
+                risk, confidence, reason = "CRITICAL", 0.9, "AWSのアクセスキーIDのフォーマットに完全に一致しています。"
         elif any(indicator in context.lower() for indicator in ['test', 'example', 'dummy', 'sample', 'demo']):
-             risk, confidence, reason = "LOW", 0.3, "テスト用の情報である可能性が高いです。"
+                risk, confidence, reason = "LOW", 0.3, "テスト用の情報である可能性が高いです。"
         return {"risk": risk, "confidence": confidence, "reason": reason}
 
     def run(self):
@@ -95,7 +95,7 @@ class SnsThreatWatcherView(QWidget):
         self.db_manager = self.sns_manager.db
         self.ai_workers = {}
         config = ConfigManager()
-        self.ai_model_name = config.get('AI_CONFIG', 'sns_model', fallback='gemma:2b')
+        self.ai_model_name = config.get('AI_CONFIG', 'sns_model', fallback='gemma2:latest')
         self.cooldown_timer = QTimer(self); self.cooldown_seconds = 0
         self.cooldown_timer.timeout.connect(self.update_cooldown)
         self.init_ui()
@@ -118,8 +118,8 @@ class SnsThreatWatcherView(QWidget):
         self.leaks_table.setModel(self.leaks_model)
         header = self.leaks_table.horizontalHeader()
         for i, width in enumerate([140, 60, 70, 100, 60, 100, 250]):
-             header.setSectionResizeMode(i, QHeaderView.ResizeMode.Stretch if i == 6 else QHeaderView.ResizeMode.Interactive)
-             if i != 6 : header.resizeSection(i, width)
+            header.setSectionResizeMode(i, QHeaderView.ResizeMode.Stretch if i == 6 else QHeaderView.ResizeMode.Interactive)
+            if i != 6 : header.resizeSection(i, width)
         self.leaks_table.clicked.connect(self.on_row_selected); self.leaks_table.doubleClicked.connect(self.on_row_double_clicked)
         
         action_layout = QHBoxLayout(); self.scan_button = QPushButton("分析サイクル開始"); self.refresh_button = QPushButton("表示更新")
@@ -187,14 +187,20 @@ class SnsThreatWatcherView(QWidget):
         if not index.isValid(): return
         leak_data = self.leaks_model.item(index.row(), 0).data(Qt.ItemDataRole.UserRole)
         self.display_ai_report(leak_data)
+        
+        # ★★★ 修正箇所 ★★★
+        # ステータスが'NEW'の場合、シングルクリックで分析を開始する
+        if leak_data and leak_data.get('status') == 'NEW':
+            self.start_single_ai_analysis(leak_data)
 
     def get_display_status(self, leak):
         status, risk = leak.get('status'), leak.get('risk_level')
-        return {'NEW': 'PENDING', 'PENDING': 'ANALYZING...'}.get(status, risk or 'UNKNOWN')
+        return {'NEW': '未分析', 'PENDING': '分析中...'}.get(status, risk or '不明') # 表示を分かりやすく変更
 
     def set_status_item_color(self, item, status_text):
-        colors = {"LOW":"#2ecc71", "MEDIUM":"#f1c40f", "HIGH":"#e67e22", "CRITICAL":"#e74c3c", "SAFE":"#3498db", "UNKNOWN":"#95a5a6"}
-        if status_text in colors: item.setBackground(QColor(colors[status_text])); item.setForeground(QColor("white"))
+        colors = {"LOW":"#2ecc71", "MEDIUM":"#f1c40f", "HIGH":"#e67e22", "CRITICAL":"#e74c3c", "SAFE":"#3498db", "不明":"#95a5a6", "未分析": "#bdc3c7"}
+        if status_text in colors: item.setBackground(QColor(colors[status_text]))
+        if status_text in ["CRITICAL", "HIGH"]: item.setForeground(QColor("white"))
     
     def set_relevance_item_color(self, item, score):
         if score > 70: item.setBackground(QColor("#e74c3c")); item.setForeground(QColor("white"))
@@ -260,7 +266,7 @@ class SnsThreatWatcherView(QWidget):
     def start_single_ai_analysis(self, leak_data):
         unified_id = leak_data['id']
         self.db_manager.update_leak_status(unified_id, 'PENDING')
-        self.load_detected_leaks()
+        self.load_detected_leaks() # テーブルの表示を「分析中...」に更新
         self.report_area.setHtml(f"<h3>AIサマリー生成中...</h3><p>ID: {unified_id} を分析しています。</p>")
         worker = AiAnalysisWorker(leak_data, self.ai_model_name)
         self.ai_workers[unified_id] = worker
@@ -273,14 +279,19 @@ class SnsThreatWatcherView(QWidget):
         current_selected_id = None
         current_index = self.leaks_table.currentIndex()
         if current_index.isValid():
-            current_selected_id = self.leaks_model.item(current_index.row(), 0).data(Qt.ItemDataRole.UserRole)['id']
-        
+            selected_item = self.leaks_model.item(current_index.row(), 0)
+            if selected_item and selected_item.data(Qt.ItemDataRole.UserRole):
+                current_selected_id = selected_item.data(Qt.ItemDataRole.UserRole).get('id')
+
         self.load_detected_leaks()
         
         if unified_id == current_selected_id:
             for row in range(self.leaks_model.rowCount()):
-                if self.leaks_model.item(row, 0).data(Qt.ItemDataRole.UserRole)['id'] == unified_id:
-                    self.display_ai_report(self.leaks_model.item(row, 0).data(Qt.ItemDataRole.UserRole))
+                item = self.leaks_model.item(row, 0)
+                if item and item.data(Qt.ItemDataRole.UserRole) and item.data(Qt.ItemDataRole.UserRole).get('id') == unified_id:
+                    self.display_ai_report(item.data(Qt.ItemDataRole.UserRole))
+                    # 再選択してハイライトを維持
+                    self.leaks_table.selectRow(row)
                     break
 
     def display_ai_report(self, leak_data):
@@ -288,8 +299,14 @@ class SnsThreatWatcherView(QWidget):
             self.report_area.clear()
             return
         status = leak_data.get('status')
-        if status == 'NEW': self.report_area.setHtml("<p>クリックでAI分析を開始します。</p>"); return
-        if status == 'PENDING': self.report_area.setHtml(f"<h3>分析中...</h3><p>ID: {leak_data['id']} を分析中です。</p>"); return
+        # ★★★ 修正箇所 ★★★
+        # 'NEW'や'PENDING'の時のメッセージを調整
+        if status == 'NEW': 
+            self.report_area.setHtml(f"<h3>分析開始...</h3><p>ID: {leak_data['id']} の分析を開始します。</p>")
+            return
+        if status == 'PENDING': 
+            self.report_area.setHtml(f"<h3>分析中...</h3><p>ID: {leak_data['id']} を分析中です。</p>")
+            return
         
         report_content = leak_data.get('ai_report', {}); report_data = report_content.get('report_data', {})
         if 'error_report' in report_data:
