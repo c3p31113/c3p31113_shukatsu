@@ -447,10 +447,7 @@ XAIが示してくれた上記3つの「答え」を基に、私たちは次の�
 
 **Title:** Unveiling the Black Box of Unsupervised Anomaly Detection: Quantifying Malware Stealth and Its Statistical Mimesis Mechanisms in Network Traffic
 
-**著者 (Author):** `c3p31113`
-**リポジトリ (Repository):** `https://github.com/c3p31113/c3p31113_shukatsu/tree/main/malware_xai_analysis`
 
------
 
 ### 1\. 概要 (Abstract)
 
