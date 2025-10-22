@@ -596,7 +596,7 @@ Phase 2 で算出した異常スコアの分布（`./Results/phase2_distribution
 
 [表2] の結果に基づき、分析の焦点を「検知群（TP, `n=47`）」と「ステルス群（FN, `n=31`）」の差へと移行し、SHAP分析（`./Python/phase4_xai_investigator.py`）を行った。
 
-![図3](https://github.com/c3p31113/c3p31113_shukatsu/raw/main/Results/phase4_shap_why_detected_TP.png)
+![図3: 検知理由（TP群）のSHAP分析](./Results/phase4_shap_why_detected_TP.png)
 
 **結果の解釈:** [図3] は、モデルがマルウェアを「検知（異常と判断）」した理由を示す。「持続的で、データ量が多く、複雑な」通信（`avg_packet_size`, `packet_count` 等）を、訓練データ（Honeypotノイズ）とは異なると判断したことがわかる。
 
