@@ -573,7 +573,9 @@ XAIが示してくれた上記3つの「答え」を基に、私たちは次の�
 
 Phase 2 で算出した異常スコアの分布（`./Results/phase2_distribution_proof.png`）を [図2] に、Phase 3 の統計検定結果（`./Python/phase3_statistical_prover.py` の出力）を [表2] に示す。
 
-![図2: 異常スコア分布](./Results/phase2_distribution_proof.png)
+
+![図2: 異常スコア分布](./malware_xai_analysis/Results/phase2_distribution_proof.png)
+
 
 **[表2: マン・ホイットニーのU検定結果 (p-value)]**
 | 検定ペア | n (Group 1) | n (Group 2) | p-value | 結果 (α=0.05) |
@@ -596,11 +598,15 @@ Phase 2 で算出した異常スコアの分布（`./Results/phase2_distribution
 
 [表2] の結果に基づき、分析の焦点を「検知群（TP, `n=47`）」と「ステルス群（FN, `n=31`）」の差へと移行し、SHAP分析（`./Python/phase4_xai_investigator.py`）を行った。
 
-![図3: 検知理由（TP群）のSHAP分析](./Results/phase4_shap_why_detected_TP.png)
+
+![図3](./malware_xai_analysis/Results/phase4_shap_why_detected_TP.png)
+
 
 **結果の解釈:** [図3] は、モデルがマルウェアを「検知（異常と判断）」した理由を示す。「持続的で、データ量が多く、複雑な」通信（`avg_packet_size`, `packet_count` 等）を、訓練データ（Honeypotノイズ）とは異なると判断したことがわかる。
 
-![図4: 見逃し理由（ステルス群/FN群）のSHAP分析](./Results/phase4_shap_beeswarm_why_missed_FN.png)
+
+![図4: 見逃し理由（ステルス群/FN群）のSHAP分析](./malware_xai_analysis/Results/phase4_shap_beeswarm_why_missed_FN.png)
+
 
 **結果の解釈:** [図4] は、本研究の最終結論である。モデルがマルウェアを「見逃した（正常と判断した）」理由を示している。横軸のSHAP値が 0.0 より右側にある（＝正常側へスコアを押し上げた）特徴量に着目する。
 
