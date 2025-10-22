@@ -457,4 +457,4 @@ XAIが示してくれた上記3つの「答え」を基に、私たちは次の�
 -----
 
 
-![TEST](https://github.com/c3p31113/c3p31113_shukatsu/malware_xai_analysis/Results/phase4_shap_beeswarm_why_missed_FN.png)
+![TEST](https://github.com/c3p31113/c3p31113_shukatsu/tree/main/malware_xai_analysis/Results/phase4_shap_beeswarm_why_missed_FN.png)
